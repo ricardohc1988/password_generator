@@ -3,6 +3,7 @@ import tkinter as tk
 from tkinter import messagebox
 import random
 import string
+from utils import AMBIGUOUS_CHARS
 
 def generate_password():
     password_length = int(length_var.get())
@@ -22,21 +23,36 @@ def generate_password():
     if not characters:
         messagebox.showwarning("Warning", "Please select at least one character set")
         return
-
+    
+    # Exclude ambiguous characters if the option is enabled
+    if exclude_ambiguous_var.get():
+        filtered_characters = []
+        for char_set in [string.ascii_uppercase, string.ascii_lowercase, 
+                         string.digits, string.punctuation]:
+            filtered = [c for c in char_set if c not in AMBIGUOUS_CHARS]
+            filtered_characters.extend(filtered)
+        
+        characters = ''.join(filtered_characters)
+    
     # Ensure at least one character from each selected set is included
     password_chars = []
     if uppercase_var.get():
-        password_chars.append(random.choice(string.ascii_uppercase))
+        available_upper = [c for c in string.ascii_uppercase if c not in AMBIGUOUS_CHARS] if exclude_ambiguous_var.get() else string.ascii_uppercase
+        password_chars.append(random.choice(available_upper))
     if lowercase_var.get():
-        password_chars.append(random.choice(string.ascii_lowercase))
+        available_lower = [c for c in string.ascii_lowercase if c not in AMBIGUOUS_CHARS] if exclude_ambiguous_var.get() else string.ascii_lowercase
+        password_chars.append(random.choice(available_lower))
     if numbers_var.get():
-        password_chars.append(random.choice(string.digits))
+        available_numbers = [c for c in string.digits if c not in AMBIGUOUS_CHARS] if exclude_ambiguous_var.get() else string.digits
+        password_chars.append(random.choice(available_numbers))
     if symbols_var.get():
-        password_chars.append(random.choice(string.punctuation))
+        available_symbols = [c for c in string.punctuation if c not in AMBIGUOUS_CHARS] if exclude_ambiguous_var.get() else string.punctuation
+        password_chars.append(random.choice(available_symbols))
     
     # Fill the rest of the password length with random choices from the selected characters
     while len(password_chars) < password_length:
-        password_chars.append(random.choice(characters))
+        char = random.choice(characters)
+        password_chars.append(char)
     
     # Shuffle the password characters to ensure randomness
     random.shuffle(password_chars)
@@ -54,7 +70,7 @@ def copy_to_clipboard():
 # Create the main window
 window = ctk.CTk()
 window.title("Password Generator")
-window.geometry("400x400")
+window.geometry("400x450")
 window.resizable(False, False)
 ctk.set_appearance_mode("dark")
 
@@ -98,6 +114,15 @@ numbers_check.grid(row=2, column=0, padx=10, pady=5, sticky='w')
 symbols_var = ctk.BooleanVar()
 symbols_check = ctk.CTkCheckBox(checkbox_frame, text="Symbols", variable=symbols_var)
 symbols_check.grid(row=2, column=1, padx=10, pady=5, sticky='w')
+
+# Checkbox to exclude ambiguous characters
+exclude_ambiguous_var = ctk.BooleanVar(value=True)
+exclude_ambiguous_check = ctk.CTkCheckBox(
+    checkbox_frame, 
+    text="Exclude ambiguous chars (e.g., l, 1, O, 0)",
+    variable=exclude_ambiguous_var
+)
+exclude_ambiguous_check.grid(row=3, column=0, columnspan=2, padx=10, pady=5, sticky='w')
 
 # Entry to display the generated password
 password_entry = ctk.CTkEntry(main_frame, width=200, justify="center")
